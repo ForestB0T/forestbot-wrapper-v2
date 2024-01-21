@@ -1,0 +1,1 @@
+export { default as ForestBotAPI } from "./wrapper.js";

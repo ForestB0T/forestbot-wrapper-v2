@@ -1,0 +1,17 @@
+{
+  "name": "forestbot-api-wrapper-v2",
+  "version": "1.0.0",
+  "main": "build/index.js",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "start": "tsc && node .",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@types/node": "^20.11.5",
+    "@types/ws": "^8.5.10",
+    "axios": "^1.6.5",
+    "ws": "^8.16.0"
+  }
+}
