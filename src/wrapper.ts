@@ -2,13 +2,6 @@ import axios from "axios";
 import ForestBotWebsocketClient from "./websocket.js";
 import EventEmitter from "events";
 
-/**
- * @class ForestBotAPI 
- * series of helper functions that wrap around the main ForestBot API
- * https://github.com/forestB0t/hub
- * We also initialize the websocket here.
- */
-
 declare interface ForestBotAPI {
     on(event: "websocket_error", listener: (error: Error) => void): this
     on(event: "minecraft_player_death", listener: (data: MinecraftPlayerDeathMessage) => void): this
@@ -25,12 +18,17 @@ declare interface ForestBotAPI {
 
 
 
+/**
+ * @class ForestBotAPI 
+ * series of helper functions that wrap around the main ForestBot API
+ * https://github.com/forestB0t/hub
+ * We also initialize the websocket here.
+ */
 class ForestBotAPI extends EventEmitter {
+    private apiKey: string;
 
     public apiurl: string;
-    private apiKey: string;
     public websocket: ForestBotWebsocketClient | undefined;
-
     public logErrors: boolean = false;
 
     constructor(options: ForestBotAPIOptions) {
@@ -285,6 +283,14 @@ class ForestBotAPI extends EventEmitter {
         }
     }
 
+    /**
+     * Getting a list of advancements for a user on a specific server with a limit and order.
+     * @param uuid 
+     * @param server 
+     * @param limit 
+     * @param order 
+     * @returns 
+     */
     public async getAdvancements(uuid: string, server: string, limit: number, order: "DESC" | "ASC"): Promise<MinecraftAdvancementMessage[]|null> {
         try {
             const response = await axios.get(`${this.apiurl}/advancements?uuid=${uuid}&server=${server}&limit=${limit}&order=${order}`);
@@ -370,9 +376,107 @@ class ForestBotAPI extends EventEmitter {
         }
     }
 
+    /**
+     * Getting the self submitted whois data for a user.
+     * @param username 
+     * @returns 
+     */
     public async getWhoIs(username: string): Promise<WhoIsData|null> {
         try {
             const response = await axios.get(`${this.apiurl}/whois?username=${username}`);
+            return response.data;
+        } catch (err) {
+            if (this.logErrors) {
+                console.error(err);
+            }
+            return null;
+        }
+    }
+
+
+    /**
+     * Get a random quote for a user on a specific server
+     * @param username 
+     * @param server 
+     * @returns 
+     */
+    public async getQuote(username: string, server: string): Promise<Quote|null> {
+        try {  
+            const response = await axios.get(`${this.apiurl}/quote?name=${username}&server=${server}`);
+            return response.data
+        } catch (err) {
+            if (this.logErrors) {
+                console.error(err);
+            } 
+            return null;
+        }
+    }
+
+    /**
+     * Get the top statistic for a server with a limit
+     * @param stat 
+     * @param server 
+     * @param limit 
+     * @returns 
+     */
+    public async getTopStatistic(stat: string, server: string, limit: number): Promise<any|null> {
+        try {
+            const response = await axios.get(`${this.apiurl}/top-statistic?statistic=${stat}&server=${server}&limit=${limit}`);
+            return response.data
+        } catch (err) {
+            if (this.logErrors) {
+                console.error(err);
+            }
+            return null;
+        }
+    }
+
+    /**
+     * Get the hourly player activity for a server, this will return the amount of unique logins for each hour of the day for each day.
+     * @param server
+     */
+    public async getHourlyPlayerActivity(server: string): Promise<PlayerActivityByHourResponse|null> { 
+        try {   
+            const response = await axios.get(`${this.apiurl}/player-activity-by-hour?server=${server}`);
+            return response.data;
+        } catch (err) {
+            if (this.logErrors) {
+                console.error(err);
+            }
+            return null;
+        }
+    }
+
+    /**
+     * Get the daily player activity for a server, this will return the amount of logins for each day of the week.
+     * @param server
+     */
+    public async getTotalDailyLogins(server: string): Promise<PlayerActivityByWeekDayResponse|null> { 
+        try {   
+            const response = await axios.get(`${this.apiurl}/player-activity-by-week-day?server=${server}`);
+            return response.data;
+        } catch (err) {
+            if (this.logErrors) {
+                console.error(err);
+            }
+            return null;
+        }
+    }
+
+
+    /**
+     * 
+     * 
+     * POST REQUESTS
+     * 
+     */
+
+    public async postWhoIsDescription(username: string, description: string) {
+        try {
+            const response = await axios.post(`${this.apiurl}/whois-description`, {
+                username: username,
+                description: description
+            });
             return response.data;
         } catch (err) {
             if (this.logErrors) {

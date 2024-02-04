@@ -190,3 +190,39 @@ type WhoIsData = string[];
 interface ConvertToUUID {
     uuid: string
 }
+
+interface Quote {
+    name: string, 
+    message: string,
+    Date: { String: string, Valid: boolean },
+    mc_server: string,
+    uuid: string
+}
+
+interface hourlyActivity {
+    hour: number,
+    logins: number
+};
+
+interface PlayerActivityHourlyResults {
+    weekday: number;
+    activity: hourlyActivity[]
+}
+
+interface PlayerActivityByHourResponse {
+    player_activity_by_hour: PlayerActivityHourlyResults[]
+}
+
+interface PlayerActivityByWeekDay {
+    Monday: number;
+    Tuesday: number;
+    Wednesday: number;
+    Thursday: number;
+    Friday: number;
+    Saturday: number;
+    Sunday: number;
+}
+
+interface PlayerActivityByWeekDayResponse {
+    player_activity_by_week_day: PlayerActivityByWeekDay;
+  }

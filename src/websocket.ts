@@ -1,15 +1,6 @@
 import WebSocket from "ws";
 import ForestBotAPI from "./wrapper.js";
 
-
-
-
-
-
-
-
-
-
 /**
  * @class ForestBotWebsocketClient
  * This class will completely handle our websocket instance
@@ -20,10 +11,6 @@ import ForestBotAPI from "./wrapper.js";
  * I guess you could say "Important stuff" will be transmitted via websocket.
  */
 export default class ForestBotWebsocketClient {
-
-    //The websocket base url
-    public websocket_url: string;
-
     //The api key, can be a read write key or a read only key.
     private apiKey: string
 
@@ -38,6 +25,9 @@ export default class ForestBotWebsocketClient {
 
     //Our main API instance
     private ForestBotApi: ForestBotAPI;
+
+    //The websocket base url
+    public websocket_url: string;
 
     //Is the client connected to the websocket server?
     public isClientConnected: boolean = false;
@@ -157,7 +147,7 @@ export default class ForestBotWebsocketClient {
                 break;
 
             case "id":
-                this.givenClientId = data.client_id;                
+                this.givenClientId = data.client_id;
                 break;
 
             default:
