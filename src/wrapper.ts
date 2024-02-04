@@ -1,5 +1,6 @@
 import axios from "axios";
 import ForestBotWebsocketClient from "./websocket.js";
+import EventEmitter from "events";
 
 /**
  * @class ForestBotAPI 
@@ -7,17 +8,41 @@ import ForestBotWebsocketClient from "./websocket.js";
  * https://github.com/forestB0t/hub
  * We also initialize the websocket here.
  */
-export default class ForestBotAPI {
+
+declare interface ForestBotAPI {
+    on(event: "websocket_error", listener: (error: Error) => void): this
+    on(event: "minecraft_player_death", listener: (data: MinecraftPlayerDeathMessage) => void): this
+    on(event: "minecraft_player_kill", listener: (data: MinecraftPlayerKillMessage) => void): this
+    on(event: "minecraft_player_leave", listener: (data: MinecraftPlayerLeaveMessage) => void): this
+    on(event: "minecraft_player_join", listener: (data: MinecraftPlayerJoinMessage) => void): this
+    on(event: "minecraft_advancement", listener: (data: MinecraftAdvancementMessage) => void): this
+    on(event: "discord_chat", listener: (data: DiscordChatMessage) => void): this
+    on(event: "minecraft_chat", listener: (data: MinecraftChatMessage) => void): this
+    on(event: "websocket_close", listener: (data: any) => void): this;
+    on(event: "websocket_open", listener: () => void): this;
+    
+}
+
+
+
+class ForestBotAPI extends EventEmitter {
 
     public apiurl: string;
     private apiKey: string;
+    public websocket: ForestBotWebsocketClient | undefined;
+
+    public logErrors: boolean = false;
 
     constructor(options: ForestBotAPIOptions) {
-        let { apiKey, apiUrl, mc_server, websocket_options } = options;
+        super()
+        let { apiKey, apiUrl, mc_server, logerrors, websocket_options } = options;
 
         this.apiurl = apiUrl;
         this.apiKey = apiKey;
 
+        if (logerrors) {
+            this.logErrors = true
+        }
 
         /**
          * We are only initializing the websocket
@@ -26,12 +51,12 @@ export default class ForestBotAPI {
         if (websocket_options) {
 
             const ws_options = {
-                identifier: mc_server,
+                mc_server: mc_server,
                 websocket_url: websocket_options?.websocket_url,
                 apiKey: this.apiKey
             }
-            
-            new ForestBotWebsocketClient(ws_options)
+
+            this.websocket = new ForestBotWebsocketClient(ws_options, this)
         }
 
     }
@@ -43,15 +68,76 @@ export default class ForestBotAPI {
      * 
      * 
      */
+
+    /**
+     * Get the stats for a user on a specific server
+     * @param uuid The uuid for the user you want to get the stats for
+     * @param server The minecraft server you want to get the stats for
+     * @returns {AllPlayerStats} The stats for the user on the specified server
+     * 
+     */
+    public async getStatsByUuid(uuid: string, server: string): Promise<AllPlayerStats|null> {
+        try {
+            const response = await axios.get(`${this.apiurl}/playeruuid?uuid=${uuid}&server=${server}`);
+            return response.data;
+        } catch (err) {
+            if (this.logErrors) {
+                console.error(err);
+            }
+            return null
+        }
+    }
+
+    /**
+     * Gets the stats for a user on a specific server by username
+     * @param username 
+     * @param server 
+     * @returns 
+     */
+    public async getStatsByUsername(username: string, server: string): Promise<AllPlayerStats|null> {
+        try {
+            const response = await axios.get(`${this.apiurl}/playername?name=${username}&server=${server}`);
+            return response.data;
+        } catch (err) {
+            if (this.logErrors) {
+                console.error(err);
+            }
+            return null
+        }
+    }
+
+    public async convertUsernameToUuid(username: string): Promise<string|null> {
+        try {
+            const response = await axios.get(`${this.apiurl}/convert-username-to-uuid?username=${username}`);
+            if (!response || !response.data.uuid.String) return null;
+            return response.data.uuid.String;
+        } catch (err) {
+            if (this.logErrors) {
+                console.error(err);
+            }
+            return null;
+        }
+    }
+
     /**
      * Get the playtime for a user on a specific server
      * @param uuid The uuid for the user you want to get the playtime for
      * @param server The minecraft server you want to get the playtime for
      * @returns {Playtime} The playtime for the user on the specified server
      */
-    public async getPlaytime(uuid: string, server:string): Promise<Playtime> {
-        const response = await axios.get(`${this.apiurl}/playtime/${uuid}/${server}`);
-        return { playtime: response.data.playtime };
+    public async getPlaytime(uuid: string, server: string): Promise<Playtime|null> {
+        try {
+            const user = await this.getStatsByUuid(uuid, server);
+            if (user?.Playtime) {
+                return { playtime: user.Playtime };
+            } else return null
+        } catch (err) {
+            if (this.logErrors) {
+                console.error(err);
+            }
+            return null;
+        }
+        
     }
 
     /**
@@ -60,9 +146,18 @@ export default class ForestBotAPI {
      * @param server The minecraft server you want to get the joindate for
      * @returns {Joindate} The joindate for the user on the specified server
      */
-    public async getJoindate(uuid: string, server: string): Promise<Joindate> {
-        const response = await axios.get(`${this.apiurl}/joindate/${uuid}/${server}`);
-        return { joindate: response.data.joindate };
+    public async getJoindate(uuid: string, server: string): Promise<Joindate|null> {
+        try {
+            const response = await this.getStatsByUuid(uuid, server);
+            if (response?.Joindate) {
+                return { joindate: response.Joindate };
+            } else return null;
+        } catch (err) {
+            if (this.logErrors) {
+                console.error(err);
+            }
+            return null
+        }
     }
 
     /**
@@ -71,9 +166,18 @@ export default class ForestBotAPI {
      * @param server the minecraft server you want to get the joincount for
      * @returns {JoinCount} The joincount for the user on the specified server
      */
-    public async getJoinCount(uuid: string, server: string): Promise<JoinCount> {
-        const response = await axios.get(`${this.apiurl}/joincount/${uuid}/${server}`);
-        return { joincount: response.data.joincount };
+    public async getJoinCount(uuid: string, server: string): Promise<JoinCount|null> {
+        try  {
+            const response = await this.getStatsByUuid(uuid, server);
+            if (response?.Joins) {
+                return { joincount: response.Joins };
+            } else return null;
+        } catch (err) {
+            if (this.logErrors) {
+                console.error(err);
+            }
+            return null;
+        }
     }
 
     /**
@@ -82,10 +186,26 @@ export default class ForestBotAPI {
      * @param server the minecraft server you want to get the lastseen for
      * @returns {LastSeen} The lastseen for the user on the specified server
      */
-    public async getLastSeen(uuid: string, server: string): Promise<LastSeen> { 
-        const response = await axios.get(`${this.apiurl}/lastseen/${uuid}/${server}`);
-        return { lastseen: response.data.lastseen };
+    public async getLastSeen(uuid: string, server: string): Promise<LastSeen|null> {
+        // const response = await axios.get(`${this.apiurl}/lastseen/${uuid}/${server}`);
+        // return { lastseen: response.data.lastseen };
+        try { 
+            const user = await this.getStatsByUuid(uuid, server);
+            if (user?.LastSeen) {
+                if (typeof user.LastSeen !== "string") {
+                    return { lastseen: user.LastSeen.String };
+                } else if (typeof user.LastSeen === "string") {
+                    return { lastseen: user.LastSeen };
+                } else return null;
+            } else return null;
+        } catch (err) {
+            if (this.logErrors) {
+                console.error(err);
+            }
+            return null;
+        }
     }
+
 
 
     /**
@@ -94,9 +214,21 @@ export default class ForestBotAPI {
      * @param server the minecraft server you want to get the kills / deaths count for
      * @returns {Kd} The kills / deaths count for the user on the specified server
      */
-    public async getKd(uuid: string, server: string): Promise<Kd> {
-        const response = await axios.get(`${this.apiurl}/kd/${uuid}/${server}`);
-        return { kills: response.data.kills, deaths: response.data.deaths };
+    public async getKd(uuid: string, server: string): Promise<Kd|null> {
+        // const response = await axios.get(`${this.apiurl}/kd/${uuid}/${server}`);
+        // return { kills: response.data.kills, deaths: response.data.deaths };
+        try {
+            const user = await this.getStatsByUuid(uuid, server);
+            if (user?.Kills && user?.Deaths) {
+                return { kills: user.Kills, deaths: user.Deaths };
+            } else return null; 
+
+        } catch (err) {
+            if (this.logErrors) {
+                console.error(err);
+            }
+            return null;
+        }
     }
 
     /**
@@ -105,9 +237,16 @@ export default class ForestBotAPI {
      * @param server the minecraft server you want to get deaths for
      * @param limit the limit of deaths you want to get
      */
-    public async getDeaths(uuid: string, server: string, limit: number, order: "DESC"|"ASC"): Promise<Death[]> {
-        const response = await axios.get(`${this.apiurl}/deaths/${uuid}/${server}/${limit}/${order}`);
-        return response.data.deaths;
+    public async getDeaths(uuid: string, server: string, limit: number, order: "DESC" | "ASC", type: "pvp"|"all"|"pve"): Promise<MinecraftPlayerDeathMessage[]|null> {
+        try {
+            const response = await axios.get(`${this.apiurl}/deaths?uuid=${uuid}&server=${server}&limit=${limit}&order=${order}&type=${type}`);
+            return response.data;
+        } catch (err) {
+            if (this.logErrors) {
+                console.error(err);
+            }
+            return null;
+        }
     };
 
     /**
@@ -116,9 +255,16 @@ export default class ForestBotAPI {
      * @param server the minecraft server you want to get kills for
      * @param limit the limit of kills you want to get
      */
-    public async getKills(uuid: string, server: string, limit: number, order: "DESC"|"ASC"): Promise<Kill[]> {
-        const response = await axios.get(`${this.apiurl}/kills/${uuid}/${server}/${limit}/${order}`);
-        return response.data.kills;
+    public async getKills(uuid: string, server: string, limit: number, order: "DESC" | "ASC"): Promise<MinecraftPlayerDeathMessage[]|null> {
+        try {
+            const response = await axios.get(`${this.apiurl}/kills?uuid=${uuid}&server=${server}&limit=${limit}&order=${order}`);
+            return response.data;
+        } catch (err) {
+            if (this.logErrors) {
+                console.error(err);
+            }
+            return null;
+        }
     };
 
     /**
@@ -127,14 +273,28 @@ export default class ForestBotAPI {
      * @param server the minecraft server you want to get messages for
      * @param limit the limit of messages you want to get
      */
-    public async getMessages(username: string, server: string, limit: number, order: "DESC"|"ASC"): Promise<Message[]> {
-        const response = await axios.get(`${this.apiurl}/messages/${username}/${server}/${limit}/${order}`);
-        return response.data.messages;
+    public async getMessages(username: string, server: string, limit: number, order: "DESC" | "ASC"): Promise<MinecraftChatMessage[]|null> {
+        try {
+            const response = await axios.get(`${this.apiurl}/messages?name=${username}&server=${server}&limit=${limit}&order=${order}`);
+            return response.data;
+        } catch (err) {
+            if (this.logErrors) {
+                console.error(err);
+            }
+            return null;
+        }
     }
 
-    public async getAdvancements(uuid: string, server: string, limit: number, order: "DESC"|"ASC"): Promise<Advancement[]> {
-        const response = await axios.get(`${this.apiurl}/advancements/${uuid}/${server}/${limit}/${order}`);
-        return response.data.advancements;
+    public async getAdvancements(uuid: string, server: string, limit: number, order: "DESC" | "ASC"): Promise<MinecraftAdvancementMessage[]|null> {
+        try {
+            const response = await axios.get(`${this.apiurl}/advancements?uuid=${uuid}&server=${server}&limit=${limit}&order=${order}`);
+            return response.data;
+        } catch (err) {
+            if (this.logErrors) {
+                console.error(err);
+            }
+            return null;
+        }
     }
 
     /**
@@ -143,9 +303,16 @@ export default class ForestBotAPI {
      * @param server the minecraft server you want to get the message count for
      * @returns {MessageCount} The message count for the user on the specified server
      */
-    public async getMessageCount(username: string, server: string): Promise<MessageCount> { 
-        const response = await axios.get(`${this.apiurl}/messagecount/${username}/${server}`);
-        return { messagecount: response.data.messagecount };
+    public async getMessageCount(username: string, server: string): Promise<MessageCount|null> {
+        try {
+            const response = await axios.get(`${this.apiurl}/messagecount?username=${username}&server=${server}`);
+            return response.data;
+        } catch (err) {
+            if (this.logErrors) {
+                console.error(err);
+            }
+            return null;
+        }
     }
 
     /**
@@ -155,19 +322,67 @@ export default class ForestBotAPI {
      * @param word the word you want to get the occurence for
      * @returns {WordOccurence} The word occurence for the user on the specified server
      */
-    public async getWordOccurence(username: string, server: string, word: string): Promise<WordOccurence> { 
-        const response = await axios.get(`${this.apiurl}/wordoccurence/${username}/${server}/${word}`);
-        return { word: response.data.word, count: response.data.count };
+    public async getWordOccurence(username: string, server: string, word: string): Promise<WordOccurence|null> {
+        try {
+            const response = await axios.get(`${this.apiurl}/wordcount?username=${username}&server=${server}&word=${word}`);
+            return response.data;
+        } catch (err) {
+            if (this.logErrors) {
+                console.error(err);
+            }
+            return null;
+        }
     }
 
     /**
      * Get the uuid for a username
      * @param username the username you want to get the uuid for
+     * @param server the minecraft server you want to get the uuid for
      * @returns {NameFind} The uuid for the username
      */
-    public async getNameFinder(username: string): Promise<NameFind> {
-        const response = await axios.get(`${this.apiurl}/namefinder/${username}`);
-        return { uuid: response.data.uuid, username: response.data.username };
+    public async getNameFinder(username: string, server: string): Promise<NameFind|null> {
+        try {
+            const response = await axios.get(`${this.apiurl}/namesearch?username=${username}&server=${server}`);
+            return response.data;
+        } catch (err) {
+            if (this.logErrors) {
+                console.error(err);
+            }
+            return null;
+        }
     }
 
-}   
+    /**
+     * Check if the specified username is online or not.
+     * will return the server the user is on if they are online.
+     * @param username the user we want to check is online or not.
+     * @returns {OnlineCheck}
+     */
+    public async getOnlineCheck(username: string): Promise<OnlineCheck|null> {
+        try {
+            const response = await axios.get(`${this.apiurl}/online?username=${username}`);
+            return response.data;
+        } catch (err) {
+            if (this.logErrors) {
+                console.error(err);
+            }
+            return null;
+        }
+    }
+
+    public async getWhoIs(username: string): Promise<WhoIsData|null> {
+        try {
+            const response = await axios.get(`${this.apiurl}/whois?username=${username}`);
+            return response.data;
+        } catch (err) {
+            if (this.logErrors) {
+                console.error(err);
+            }
+            return null;
+        }
+    }
+
+}
+
+
+export default ForestBotAPI;

@@ -1,25 +1,30 @@
-interface ForestBotAPIOptions { 
+interface ForestBotAPIOptions {
     apiUrl: string
     apiKey: string
     mc_server: string
+    logerrors?: boolean
     websocket_options?: {
-        identifier: string
         websocket_url: string
     }
 }
 
+interface ClientIdExchange {
+    client_id: string
+
+}
+
 interface ForestBotWebsocketClientOptions {
-    identifier: string
+    mc_server: string
     websocket_url: string
     apiKey: string
 }
 
 interface MinecraftChatMessage {
+    name: string
     message: string
-    username: string
+    date: string
+    mc_server: string
     uuid: string
-    timestamp: string
-    server: string
 };
 
 interface DiscordChatMessage {
@@ -32,12 +37,13 @@ interface DiscordChatMessage {
     guild_name: string
 }
 
-interface MinecraftAdvancementMessage { 
-    advancement: string
+interface MinecraftAdvancementMessage {
     username: string
+    advancement: string
+    time: number,
+    mc_server: string,
     uuid: string
-    timestamp: string
-    server: string
+    id: number | null
 };
 
 interface MinecraftPlayerJoinMessage {
@@ -62,29 +68,35 @@ interface MinecraftPlayerKillMessage {
 };
 
 interface MinecraftPlayerDeathMessage {
-    timestamp: string
-    server: string
-
     victim: string
     death_message: string
-    murderer?: string
-    type: "pve" | "pvp"
-    victimUUID: string
+
+    //the object will be present only on pvp deaths and when recieving from websocket.
+    //we do not use the object when sending a death to the api.
+    //we send the murderer as a string, (username)
+    murderer: { String: string, Valid: boolean } | string | undefined
+    time: number,
+    type: "pve"|"pvp",
+    mc_server: string,
+    id: number | null | undefined
+    victimUUID: string,
     murdererUUID?: string
 };
 
-type messageActionTypes = "inbound_minecraft_chat" | "inbound_discord_chat" |"send_update_player_list" | "outbound_minecraft_chat" | "outbound_discord_chat" | "minecraft_advancement" | "minecraft_player_join" | "minecraft_player_leave" | "minecraft_player_kill" | "minecraft_player_death";
+type messageActionTypes = "id" | "minecraft_chat" | "discord_chat" | "send_update_player_list" | "minecraft_advancement" | "minecraft_player_join" | "minecraft_player_leave" | "minecraft_player_kill" | "minecraft_player_death";
 type inboundmessageDataTypes = DiscordChatMessage | MinecraftAdvancementMessage | MinecraftChatMessage | MinecraftPlayerDeathMessage | MinecraftPlayerKillMessage | MinecraftPlayerJoinMessage | MinecraftPlayerLeaveMessage;
 
 // type outboundMessageActionTypes = 
 // type outboundMessageDataTypes = any;
 
-interface InBoundWebsocketMessage { 
+interface InBoundWebsocketMessage {
+    client_id: string,
     action: messageActionTypes
     data: inboundmessageDataTypes
 };
 
 interface OutboundWebsocketMessage {
+    client_id: string,
     action: MessageActionTypes,
     data: outboundMessageDataTypes
 }
@@ -94,7 +106,7 @@ interface Playtime {
 }
 
 interface Joindate {
-    joindate: number
+    joindate: number|string
 }
 
 interface JoinCount {
@@ -123,20 +135,21 @@ interface Message {
 }
 
 interface LastSeen {
-    lastseen: number
+    lastseen: number|string
 }
 
 interface MessageCount {
-    messagecount: number
-}
-
-interface WordOccurence {
-    word: string,
+    name: string,
     count: number
 }
 
+interface WordOccurence {
+    name: string,
+    count: number,
+    word: string
+}
+
 interface NameFind {
-    uuid: string,
     username: string
 }
 
@@ -150,4 +163,30 @@ interface Player {
     uuid: string,
     latency: number,
     server: string
+}
+
+interface AllPlayerStats {
+    Username: string,
+    Kills: number,
+    Deaths: number,
+    Joindate: string,
+    LastSeen: string | null | { String: string, Valid: boolean },
+    UUID: string,
+    Playtime: number,
+    Joins: number,
+    Leaves: number,
+    LastDeathTime: number,
+    LastDeathString: string | null,
+    MCServer: string
+}
+
+interface OnlineCheck {
+    online: boolean,
+    server: string | undefined | null
+}
+
+type WhoIsData = string[];
+
+interface ConvertToUUID {
+    uuid: string
 }

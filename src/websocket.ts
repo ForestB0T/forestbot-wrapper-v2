@@ -1,5 +1,13 @@
 import WebSocket from "ws";
-import EventEmitter from "events";
+import ForestBotAPI from "./wrapper.js";
+
+
+
+
+
+
+
+
 
 
 /**
@@ -11,41 +19,52 @@ import EventEmitter from "events";
  * basically everything else is able to go through regular http POST and GET requests.
  * I guess you could say "Important stuff" will be transmitted via websocket.
  */
-export default class ForestBotWebsocketClient extends EventEmitter {
+export default class ForestBotWebsocketClient {
 
+    //The websocket base url
     public websocket_url: string;
-    public identifier: string
 
+    //The api key, can be a read write key or a read only key.
     private apiKey: string
-    
-    private PingInterval: NodeJS.Timeout | undefined;
-    
 
-    /**
-     * Boolean to check if our client is currently connected to the websocket server!
-     */
+    //We get this from the websocket server when we connect then store it here.
+    private givenClientId: string | undefined;
+
+    //This is the interval that will be used to ping the websocket server every 5 seconds.
+    private PingInterval: NodeJS.Timeout | undefined;
+
+    //The minecraft server we want data for.
+    private mc_server: string
+
+    //Our main API instance
+    private ForestBotApi: ForestBotAPI;
+
+    //Is the client connected to the websocket server?
     public isClientConnected: boolean = false;
+
+    //The websocket instance
     public Socket: WebSocket | undefined;
 
-    constructor(options: ForestBotWebsocketClientOptions){
-        super()
-        const { identifier, websocket_url, apiKey  } = options;
+    constructor(options: ForestBotWebsocketClientOptions, ForestBotApi: ForestBotAPI) {
+        this.ForestBotApi = ForestBotApi;
+        const { mc_server, websocket_url, apiKey } = options;
 
         this.websocket_url = websocket_url;
-        this.identifier = identifier;
+
         this.apiKey = apiKey;
+        this.mc_server = mc_server;
 
         this.Socket = undefined
         this.authenticate();
     };
 
     //our websocket url will look something like:
-    //ws://localhost:5000/authenticate?client-id=newtest&client-type=minecraft-bot&x-api-key=123456789
+    //ws://localhost:5000/authenticate?server=simplyvanilla&&x-api-key=123456789
     //client-id - this being the minecraft server name
     //api-key - this being the api key
     private async authenticate() {
-        //lets construct a url!
-        const url = `${this.websocket_url}?client-id=${this.identifier}&x-api-key=${this.apiKey}`
+        console.log("Connecting to ForestBot Websocket... at ", this.websocket_url, " for server ", this.mc_server, " with api key ", this.apiKey)
+        const url = `${this.websocket_url}?server=${this.mc_server}&&x-api-key=${this.apiKey}`
         this.Socket = new WebSocket(url);
         this.handleEvents();
     }
@@ -54,13 +73,20 @@ export default class ForestBotWebsocketClient extends EventEmitter {
      * Helper function to send messages to the websocket. Takes in dynamic interface.
      * @param {object} data - The data you want to send to the websocket.
      */
-    public async sendMessage(data: OutboundWebsocketMessage) {
+    public async sendMessage(data: { data: any, action: string }) {
+
+        const outBoundWebSocketMessage: OutboundWebsocketMessage = {
+            client_id: this.givenClientId || "",
+            data: data.data,
+            action: data.action
+        }
         //After we create our data types we need to come back here and explicitly add types for our data. For now the data will be of type "any"
-        const message = JSON.stringify(data);
+        const message = JSON.stringify(outBoundWebSocketMessage);
         return this.Socket?.send(message);
     }
 
     private handleEvents() {
+
         this.Socket?.on("open", this.handleOpen.bind(this))
         this.Socket?.on("error", this.handleError.bind(this))
         this.Socket?.on("close", this.handleClose.bind(this))
@@ -68,20 +94,21 @@ export default class ForestBotWebsocketClient extends EventEmitter {
     }
 
     private handleError(error: Error) {
-        this.emit("websocket_error", error)
+        this.ForestBotApi.emit("websocket_error", error)
     }
 
     private handleClose(reason: string) {
-        this.emit("websocket_close", reason)
+        this.ForestBotApi.emit("websocket_close", reason)
         this.isClientConnected = false;
         this.PingInterval && clearInterval(this.PingInterval);
     }
 
     private handleOpen() {
         this.isClientConnected = true;
-        this.emit("websocket_open")
+        this.ForestBotApi.emit("websocket_open")
+        console.log("opened")
 
-        this.PingInterval = setInterval(() => { 
+        this.PingInterval = setInterval(() => {
             this.Socket?.ping("pingdata");
         }, 5000)
 
@@ -92,40 +119,49 @@ export default class ForestBotWebsocketClient extends EventEmitter {
      * Messages that are sent from the websocket server to the client.
      * 
      */
+
+    // on(event: "minecraft_chat", listener: (data: MinecraftChatMessage) => void): this;
+    // on(event: "discord_chat", listener: (data: DiscordChatMessage) => void): this;
+    // on(event: "minecraft_player_death", listener: (data: MinecraftPlayerDeathMessage) => void): this;
+
     private handleInBoundMessage(message: WebSocket.Data) {
-        const data: InBoundWebsocketMessage= JSON.parse(message.toString());
+        const data: InBoundWebsocketMessage = JSON.parse(message.toString());
 
         switch (data.action) {
-            case "inbound_minecraft_chat":
-                this.emit("minecraft_chat", data.data as MinecraftChatMessage)
+            case "minecraft_chat":
+                this.ForestBotApi.emit("minecraft_chat", data.data as MinecraftChatMessage)
                 break;
 
-            case "inbound_discord_chat":
-                this.emit("discord_chat", data.data as DiscordChatMessage)
+            case "discord_chat":
+                this.ForestBotApi.emit("discord_chat", data.data as DiscordChatMessage)
                 break;
 
             case "minecraft_player_death":
-                this.emit("minecraft_player_death", data.data as MinecraftPlayerDeathMessage)
+                this.ForestBotApi.emit("minecraft_player_death", data.data as MinecraftPlayerDeathMessage)
                 break;
 
             case "minecraft_player_kill":
-                this.emit("minecraft_player_kill", data.data as MinecraftPlayerKillMessage)
+                this.ForestBotApi.emit("minecraft_player_kill", data.data as MinecraftPlayerKillMessage)
                 break;
 
             case "minecraft_player_join":
-                this.emit("minecraft_player_join", data.data as MinecraftPlayerJoinMessage)
+                this.ForestBotApi.emit("minecraft_player_join", data.data as MinecraftPlayerJoinMessage)
                 break;
 
             case "minecraft_player_leave":
-                this.emit("minecraft_player_leave", data.data as MinecraftPlayerLeaveMessage)
+                this.ForestBotApi.emit("minecraft_player_leave", data.data as MinecraftPlayerLeaveMessage)
                 break;
 
             case "minecraft_advancement":
-                this.emit("minecraft_advancement", data.data as MinecraftAdvancementMessage)
+                this.ForestBotApi.emit("minecraft_advancement", data.data as MinecraftAdvancementMessage)
+                break;
+
+            case "id":
+                this.givenClientId = data.client_id;                
                 break;
 
             default:
-                this.emit("unknown_message", data)
+                this.ForestBotApi.emit("unknown_message", data)
                 break;
         }
 
@@ -135,14 +171,14 @@ export default class ForestBotWebsocketClient extends EventEmitter {
      * Here are some helper functions for sending messages to the websocket.
      * like sending minecraft chat messages, discord chat messages, and updating the player list, advancements, kills.
      */
-     
+
     /**
      * Sending player chat messages to the websocket
      * @param msgData {MinecraftChatMessage}
      * @returns void
      */
     public async sendMinecraftChatMessage(msgData: MinecraftChatMessage) {
-        return await this.sendMessage({ action: "outbound_minecraft_chat", data: msgData })
+        return await this.sendMessage({ action: "minecraft_chat", data: msgData })
     };
 
     /**
@@ -151,7 +187,7 @@ export default class ForestBotWebsocketClient extends EventEmitter {
      * @returns void
      */
     public async sendDiscordChatMessage(msgData: DiscordChatMessage) {
-        return await this.sendMessage({ action: "outbound_discord_chat", data: msgData })
+        return await this.sendMessage({ action: "discord_chat", data: msgData })
     };
 
     /**
