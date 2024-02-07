@@ -1,9 +1,9 @@
 interface ForestBotAPIOptions {
     apiUrl: string
     apiKey: string
-    mc_server: string
     logerrors?: boolean
     websocket_options?: {
+        mc_server: string
         websocket_url: string
     }
 }

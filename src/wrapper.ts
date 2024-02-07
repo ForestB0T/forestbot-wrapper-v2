@@ -33,7 +33,7 @@ class ForestBotAPI extends EventEmitter {
 
     constructor(options: ForestBotAPIOptions) {
         super()
-        let { apiKey, apiUrl, mc_server, logerrors, websocket_options } = options;
+        let { apiKey, apiUrl, logerrors, websocket_options } = options;
 
         this.apiurl = apiUrl;
         this.apiKey = apiKey;
@@ -49,7 +49,7 @@ class ForestBotAPI extends EventEmitter {
         if (websocket_options) {
 
             const ws_options = {
-                mc_server: mc_server,
+                mc_server: websocket_options?.mc_server,
                 websocket_url: websocket_options?.websocket_url,
                 apiKey: this.apiKey
             }
