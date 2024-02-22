@@ -1,2 +1,2 @@
-import ForestBotAPI from "./wrapper.js";
+import { ForestBotAPI } from "./wrapper.js";
 export default ForestBotAPI;
