@@ -1,2 +1,3 @@
-import { ForestBotAPI } from "./wrapper.js";
-export default ForestBotAPI;
+export { default as ForestBotAPI } from "./wrapper.js";
+export * from "./types.js";
+

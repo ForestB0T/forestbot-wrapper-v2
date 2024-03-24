@@ -1,6 +1,6 @@
-import * as types from "./index";
 import WebSocket from "ws";
 import { ForestBotAPI } from "./wrapper.js";
+import { ForestBotWebsocketClientOptions, OutboundWebsocketMessage, InBoundWebsocketMessage, MinecraftChatMessage, DiscordChatMessage, MinecraftPlayerDeathMessage, MinecraftPlayerKillMessage, MinecraftPlayerJoinMessage, MinecraftPlayerLeaveMessage, MinecraftAdvancementMessage, Player } from "./types.js";
 
 /**
  * @class ForestBotWebsocketClient
@@ -24,6 +24,8 @@ export default class ForestBotWebsocketClient {
     //The minecraft server we want data for.
     private mc_server: string
 
+    private isBotClient: boolean = false;
+
     //Our main API instance
     private ForestBotApi: ForestBotAPI;
 
@@ -38,9 +40,10 @@ export default class ForestBotWebsocketClient {
 
     constructor(options: ForestBotWebsocketClientOptions, ForestBotApi: ForestBotAPI) {
         this.ForestBotApi = ForestBotApi;
-        const { mc_server, websocket_url, apiKey } = options;
+        const { mc_server, websocket_url, apiKey, isBotClient } = options;
 
         this.websocket_url = websocket_url;
+        this.isBotClient = isBotClient;
 
         this.apiKey = apiKey;
         this.mc_server = mc_server;
@@ -54,7 +57,7 @@ export default class ForestBotWebsocketClient {
     //client-id - this being the minecraft server name
     //api-key - this being the api key
     private async authenticate() {
-        const url = `${this.websocket_url}?server=${this.mc_server}&&x-api-key=${this.apiKey}`
+        const url = `${this.websocket_url}/websocket/connect?server=${this.mc_server}&&is-bot-client=${this.isBotClient ? "true" : "false"}`
         this.Socket = new WebSocket(url);
         this.handleEvents();
     }
@@ -64,6 +67,10 @@ export default class ForestBotWebsocketClient {
      * @param {object} data - The data you want to send to the websocket.
      */
     public async sendMessage(data: { data: any, action: string }) {
+
+        if (this.givenClientId == undefined) {
+            return this.ForestBotApi.emit("websocket_error", new Error("Client ID is not defined yet"))
+        }
 
         const outBoundWebSocketMessage: OutboundWebsocketMessage = {
             client_id: this.givenClientId || "",
@@ -100,13 +107,6 @@ export default class ForestBotWebsocketClient {
         this.PingInterval = setInterval(() => {
             this.Socket?.ping("pingdata");
         }, 5000)
-
-        // lets send our api key using the x-api-key event to authenticate
-        this.sendMessage({
-            action: "x-api-key",
-            data: this.apiKey
-        })
-
     };
 
     /**
@@ -147,20 +147,26 @@ export default class ForestBotWebsocketClient {
                 this.ForestBotApi.emit("minecraft_advancement", data.data as MinecraftAdvancementMessage)
                 break;
 
-            case "new_name": 
-                this.ForestBotApi.emit("new_name", data.data as { user: { old_name: string, new_name: string }, server: string  })
+            case "new_name":
+                this.ForestBotApi.emit("new_name", data.data as { user: { old_name: string, new_name: string }, server: string })
                 break;
 
-            case "new_user": 
+            case "new_user":
                 this.ForestBotApi.emit("new_user", data.data as { user: { username: string }, server: string })
                 break;
 
-            case "error": 
+            case "error":
                 this.ForestBotApi.emit("websocket_error", data.data as any);
                 break;
 
             case "id":
                 this.givenClientId = data.client_id;
+                
+                // lets send our api key using the x-api-key event to authenticate
+                this.sendMessage({
+                    action: "x-api-key",
+                    data: this.apiKey
+                })
                 break;
 
             case "key-accepted":

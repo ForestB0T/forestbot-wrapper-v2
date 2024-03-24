@@ -1,22 +1,28 @@
+
+
+// ! ADD THE FUCKING WEBSOCKET URL!!! OMG
 interface ForestBotAPIOptions {
     apiUrl: string
+    websocket_url: string
+    isBotClient: boolean
     apiKey: string
     logerrors?: boolean
     use_websocket?: boolean
     mc_server?: string
 }
 
-interface ClientIdExchange {
-    client_id: string
-
-}
-
 interface ForestBotWebsocketClientOptions {
     mc_server: string
     websocket_url: string
     apiKey: string
+    isBotClient: boolean
 }
 
+
+interface ClientIdExchange {
+    client_id: string
+
+}
 interface MinecraftChatMessage {
     name: string
     message: string
@@ -225,42 +231,42 @@ interface PlayerActivityByWeekDayResponse {
     player_activity_by_week_day: PlayerActivityByWeekDay;
 }
 
-// export {
-//     Advancement,
-//     AllPlayerStats,
-//     ClientIdExchange,
-//     ConvertToUUID,
-//     Death,
-//     DiscordChatMessage,
-//     ForestBotAPIOptions,
-//     ForestBotWebsocketClientOptions,
-//     InBoundWebsocketMessage,
-//     JoinCount,
-//     Joindate,
-//     Kd,
-//     Kill,
-//     LastSeen,
-//     Message,
-//     MessageCount,
-//     MinecraftAdvancementMessage,
-//     MinecraftChatMessage,
-//     MinecraftPlayerDeathMessage,
-//     MinecraftPlayerJoinMessage,
-//     MinecraftPlayerKillMessage,
-//     MinecraftPlayerLeaveMessage,
-//     NameFind,
-//     OnlineCheck,
-//     OutboundWebsocketMessage,
-//     Player,
-//     PlayerActivityByHourResponse,
-//     PlayerActivityByWeekDay,
-//     PlayerActivityByWeekDayResponse,
-//     PlayerActivityHourlyResults,
-//     Playtime,
-//     Quote,
-//     WhoIsData,
-//     WordOccurence,
-//     hourlyActivity,
-//     inboundmessageDataTypes,
-//     messageActionTypes,
-// }
+export {
+    Advancement,
+    AllPlayerStats,
+    ClientIdExchange,
+    ConvertToUUID,
+    Death,
+    DiscordChatMessage,
+    ForestBotAPIOptions,
+    ForestBotWebsocketClientOptions,
+    InBoundWebsocketMessage,
+    JoinCount,
+    Joindate,
+    Kd,
+    Kill,
+    LastSeen,
+    Message,
+    MessageCount,
+    MinecraftAdvancementMessage,
+    MinecraftChatMessage,
+    MinecraftPlayerDeathMessage,
+    MinecraftPlayerJoinMessage,
+    MinecraftPlayerKillMessage,
+    MinecraftPlayerLeaveMessage,
+    NameFind,
+    OnlineCheck,
+    OutboundWebsocketMessage,
+    Player,
+    PlayerActivityByHourResponse,
+    PlayerActivityByWeekDay,
+    PlayerActivityByWeekDayResponse,
+    PlayerActivityHourlyResults,
+    Playtime,
+    Quote,
+    WhoIsData,
+    WordOccurence,
+    hourlyActivity,
+    inboundmessageDataTypes,
+    messageActionTypes,
+}

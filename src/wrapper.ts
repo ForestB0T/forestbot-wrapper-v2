@@ -1,6 +1,7 @@
 import axios from "axios";
 import ForestBotWebsocketClient from "./websocket.js";
 import EventEmitter from "events";
+import { AllPlayerStats, DiscordChatMessage, ForestBotAPIOptions, JoinCount, Joindate, Kd, LastSeen, MessageCount, MinecraftAdvancementMessage, MinecraftChatMessage, MinecraftPlayerDeathMessage, MinecraftPlayerJoinMessage, MinecraftPlayerKillMessage, MinecraftPlayerLeaveMessage, NameFind, OnlineCheck, PlayerActivityByHourResponse, PlayerActivityByWeekDayResponse, Playtime, Quote, WhoIsData, WordOccurence } from "./types.js";
 
 export declare interface ForestBotAPI extends EventEmitter {
     on(event: "websocket_error", listener: (error: Error) => void): this
@@ -26,7 +27,7 @@ export declare interface ForestBotAPI extends EventEmitter {
  * series of helper functions that wrap around the main ForestBot API
  * We also initialize the websocket here.
  */
-export class ForestBotAPI extends EventEmitter {
+class forestBotAPI extends EventEmitter {
     private apiKey: string;
 
     public apiurl: string;
@@ -35,7 +36,7 @@ export class ForestBotAPI extends EventEmitter {
 
     constructor(options: ForestBotAPIOptions) {
         super()
-        let { apiKey, apiUrl, logerrors, use_websocket, mc_server } = options;
+        let { apiKey, isBotClient, apiUrl, websocket_url, logerrors, use_websocket, mc_server } = options;
 
         this.apiurl = apiUrl;
         this.apiKey = apiKey;
@@ -52,8 +53,9 @@ export class ForestBotAPI extends EventEmitter {
 
             const ws_options = {
                 mc_server: mc_server,
-                websocket_url: `${apiUrl}/websocket/connect`,
-                apiKey: this.apiKey
+                websocket_url: websocket_url,
+                apiKey: this.apiKey,
+                isBotClient: isBotClient,
             }
 
             this.websocket = new ForestBotWebsocketClient(ws_options, this)
@@ -490,3 +492,5 @@ export class ForestBotAPI extends EventEmitter {
     }
 
 }
+
+export default forestBotAPI;

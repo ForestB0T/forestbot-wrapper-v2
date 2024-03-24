@@ -1,6 +1,6 @@
 {
   "name": "forestbot-api-wrapper-v2",
-  "version": "1.2.6",
+  "version": "1.4.1",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "type": "module",
@@ -10,7 +10,8 @@
     "build": "tsc"
   },
   "files": [
-    "build/*"
+    "build/*",
+    "types.d.ts"
   ],
   "dependencies": {
     "@types/node": "^20.11.5",
