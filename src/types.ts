@@ -84,7 +84,7 @@ interface MinecraftPlayerDeathMessage {
     mc_server: string,
     id?: number | null | undefined
     victimUUID: string,
-    murdererUUID?: string
+    murdererUUID?: { String: string, Valid: boolean }
 }
 
 type messageActionTypes = "error" | "new_user" | "key-accepted" | "new_name" | "id" | "minecraft_chat" | "discord_chat" | "send_update_player_list" | "minecraft_advancement" | "minecraft_player_join" | "minecraft_player_leave" | "minecraft_player_kill" | "minecraft_player_death";
