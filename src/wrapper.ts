@@ -155,6 +155,7 @@ class forestBotAPI extends EventEmitter {
                 return { joindate: response.Joindate };
             } else return null;
         } catch (err) {
+            [].flatMap
             if (this.logErrors) {
                 console.error(err);
             }
@@ -221,10 +222,12 @@ class forestBotAPI extends EventEmitter {
         // return { kills: response.data.kills, deaths: response.data.deaths };
         try {
             const user = await this.getStatsByUuid(uuid, server);
-            if (user?.Kills && user?.Deaths) {
+            if (user && user.Kills !== undefined && user.Deaths !== undefined && user.Username !== undefined) {
+                // Check if Kills and Deaths are defined and not null or undefined
                 return { kills: user.Kills, deaths: user.Deaths };
-            } else return null; 
-
+            } else {
+                return null;
+            }            
         } catch (err) {
             if (this.logErrors) {
                 console.error(err);
