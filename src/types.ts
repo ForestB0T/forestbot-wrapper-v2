@@ -154,7 +154,7 @@ interface WordOccurence {
 }
 
 interface NameFind {
-    username: string
+    usernames: string[]
 }
 
 interface Advancement {
