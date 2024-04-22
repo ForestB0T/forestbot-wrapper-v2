@@ -189,7 +189,9 @@ interface OnlineCheck {
     server: string | undefined | null
 }
 
-type WhoIsData = string[];
+interface WhoIsData {
+    descriptions: string[]
+}
 
 interface ConvertToUUID {
     uuid: string
