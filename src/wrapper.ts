@@ -1,7 +1,7 @@
 import axios from "axios";
 import ForestBotWebsocketClient from "./websocket.js";
 import EventEmitter from "events";
-import { AllPlayerStats, DiscordChatMessage, ForestBotAPIOptions, JoinCount, Joindate, Kd, LastSeen, MessageCount, MinecraftAdvancementMessage, MinecraftChatMessage, MinecraftPlayerDeathMessage, MinecraftPlayerJoinMessage, MinecraftPlayerKillMessage, MinecraftPlayerLeaveMessage, NameFind, OnlineCheck, PlayerActivityByHourResponse, PlayerActivityByWeekDayResponse, Playtime, Quote, WhoIsData, WordOccurence } from "./types.js";
+import { AllPlayerStats, DiscordChatMessage, ForestBotAPIOptions, JoinCount, Joindate, Kd, LastSeen, MessageCount, MinecraftAdvancementMessage, MinecraftChatMessage, MinecraftPlayerDeathMessage, MinecraftPlayerJoinMessage, MinecraftPlayerKillMessage, MinecraftPlayerLeaveMessage, NameFind, NewUserData, NewUserNameData, OnlineCheck, PlayerActivityByHourResponse, PlayerActivityByWeekDayResponse, Playtime, Quote, WhoIsData, WordOccurence } from "./types.js";
 
 export declare interface ForestBotAPI extends EventEmitter {
     on(event: "websocket_error", listener: (error: Error) => void): this
@@ -14,8 +14,8 @@ export declare interface ForestBotAPI extends EventEmitter {
     on(event: "inbound_minecraft_chat", listener: (data: MinecraftChatMessage) => void): this
     on(event: "websocket_close", listener: (data: any) => void): this;
     on(event: "websocket_open", listener: () => void): this;
-    on(event: "new_user", listener: (data: { user: { username: string }, server: string }) => void): this;
-    on(event: "new_name", listener: (data: { user: { old_name: string, new_name: string }, server: string }) => void): this;
+    on(event: "new_user", listener: (data: NewUserData) => void): this;
+    on(event: "new_name", listener: (data: NewUserNameData) => void): this;
     on(event: "key-accepted", listener: (data: any) => void): this;
     on(event: "unknown_message", listener: (data: any) => void): this;
 }
@@ -28,7 +28,7 @@ export declare interface ForestBotAPI extends EventEmitter {
  * We also initialize the websocket here.
  */
 class forestBotAPI extends EventEmitter {
-    private apiKey: string;
+    public apiKey: string;
 
     public apiurl: string;
     public websocket: ForestBotWebsocketClient | undefined;
@@ -49,10 +49,10 @@ class forestBotAPI extends EventEmitter {
          * We are only initializing the websocket
          * IF websocket_options is present in the APIOptions
          */
-        if (use_websocket && mc_server) {
+        if (use_websocket) {
 
             const ws_options = {
-                mc_server: mc_server,
+                mc_server: mc_server || "all",
                 websocket_url: websocket_url,
                 apiKey: this.apiKey,
                 isBotClient: isBotClient,
@@ -80,7 +80,7 @@ class forestBotAPI extends EventEmitter {
      */
     public async getStatsByUuid(uuid: string, server: string): Promise<AllPlayerStats | null> {
         try {
-            const response = await axios.get(`${this.apiurl}/playeruuid?uuid=${uuid}&server=${server}`);
+            const response = await axios.get(`${this.apiurl}/user?uuid=${uuid}&server=${server}`);
             return response.data;
         } catch (err) {
             if (this.logErrors) {
@@ -117,8 +117,8 @@ class forestBotAPI extends EventEmitter {
     public async convertUsernameToUuid(username: string): Promise<string | null> {
         try {
             const response = await axios.get(`${this.apiurl}/convert-username-to-uuid?username=${username}`);
-            if (!response || !response.data.uuid.String) return null;
-            return response.data.uuid.String;
+            if (!response || !response.data.uuid) return null;
+            return response.data.uuid
         } catch (err) {
             if (this.logErrors) {
                 console.error(err);
@@ -136,8 +136,8 @@ class forestBotAPI extends EventEmitter {
     public async getPlaytime(uuid: string, server: string): Promise<Playtime | null> {
         try {
             const user = await this.getStatsByUuid(uuid, server);
-            if (user?.Playtime) {
-                return { playtime: user.Playtime };
+            if (user?.playtime) {
+                return { playtime: user.playtime };
             } else return null
         } catch (err) {
             if (this.logErrors) {
@@ -157,8 +157,8 @@ class forestBotAPI extends EventEmitter {
     public async getJoindate(uuid: string, server: string): Promise<Joindate | null> {
         try {
             const response = await this.getStatsByUuid(uuid, server);
-            if (response?.Joindate) {
-                return { joindate: response.Joindate };
+            if (response?.joindate) {
+                return { joindate: response.joindate };
             } else return null;
         } catch (err) {
             [].flatMap
@@ -178,8 +178,8 @@ class forestBotAPI extends EventEmitter {
     public async getJoinCount(uuid: string, server: string): Promise<JoinCount | null> {
         try {
             const response = await this.getStatsByUuid(uuid, server);
-            if (response?.Joins) {
-                return { joincount: response.Joins };
+            if (response?.joins) {
+                return { joincount: response.joins };
             } else return null;
         } catch (err) {
             if (this.logErrors) {
@@ -196,15 +196,11 @@ class forestBotAPI extends EventEmitter {
      * @returns {LastSeen} The lastseen for the user on the specified server
      */
     public async getLastSeen(uuid: string, server: string): Promise<LastSeen | null> {
-        // const response = await axios.get(`${this.apiurl}/lastseen/${uuid}/${server}`);
-        // return { lastseen: response.data.lastseen };
         try {
             const user = await this.getStatsByUuid(uuid, server);
-            if (user?.LastSeen) {
-                if (typeof user.LastSeen !== "string") {
-                    return { lastseen: user.LastSeen.String };
-                } else if (typeof user.LastSeen === "string") {
-                    return { lastseen: user.LastSeen };
+            if (user?.lastseen) {
+                if (typeof user.lastseen === "string") {
+                    return { lastseen: user.lastseen };
                 } else return null;
             } else return null;
         } catch (err) {
@@ -228,9 +224,10 @@ class forestBotAPI extends EventEmitter {
         // return { kills: response.data.kills, deaths: response.data.deaths };
         try {
             const user = await this.getStatsByUuid(uuid, server);
-            if (user && user.Kills !== undefined && user.Deaths !== undefined && user.Username !== undefined) {
+            if (!user || !user?.username || user?.username == "") return null;
+            if (user && user.kills !== undefined && user.deaths !== undefined && user.username !== undefined) {
                 // Check if Kills and Deaths are defined and not null or undefined
-                return { kills: user.Kills, deaths: user.Deaths };
+                return { kills: user.kills, deaths: user.deaths };
             } else {
                 return null;
             }
@@ -269,7 +266,7 @@ class forestBotAPI extends EventEmitter {
     public async getKills(uuid: string, server: string, limit: number, order: "DESC" | "ASC"): Promise<MinecraftPlayerDeathMessage[] | null> {
         try {
             const response = await axios.get(`${this.apiurl}/kills?uuid=${uuid}&server=${server}&limit=${limit}&order=${order}`);
-            return response.data;
+            return response.data.data;
         } catch (err) {
             if (this.logErrors) {
                 console.error(err);
@@ -308,7 +305,25 @@ class forestBotAPI extends EventEmitter {
     public async getAdvancements(uuid: string, server: string, limit: number, order: "DESC" | "ASC"): Promise<MinecraftAdvancementMessage[] | null> {
         try {
             const response = await axios.get(`${this.apiurl}/advancements?uuid=${uuid}&server=${server}&limit=${limit}&order=${order}`);
-            return response.data;
+            return response.data["advancements"];
+        } catch (err) {
+            if (this.logErrors) {
+                console.error(err);
+            }
+            return null;
+        }
+    }
+
+    /**
+     * Getting the total advancements count for a user on a specific server
+     * @param uuid 
+     * @param server 
+     * @returns 
+     */
+    public async getTotalAdvancementsCount(uuid: string, server: string): Promise<number | null> {  
+        try {
+            const response = await axios.get(`${this.apiurl}/advancements-count?uuid=${uuid}&server=${server}`);
+            return response.data["total_advancements"];
         } catch (err) {
             if (this.logErrors) {
                 console.error(err);
@@ -490,6 +505,10 @@ class forestBotAPI extends EventEmitter {
             const response = await axios.post(`${this.apiurl}/whois-description`, {
                 username: username,
                 description: description
+            }, {
+                headers: {
+                    'x-api-key': this.apiKey
+                }
             });
             return response.data;
         } catch (err) {

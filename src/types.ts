@@ -1,6 +1,3 @@
-
-
-// ! ADD THE FUCKING WEBSOCKET URL!!! OMG
 interface ForestBotAPIOptions {
     apiUrl: string
     websocket_url: string
@@ -26,7 +23,7 @@ interface ClientIdExchange {
 interface MinecraftChatMessage {
     name: string
     message: string
-    date: { String: string, Valid: boolean }
+    date: string
     mc_server: string
     uuid: string
 }
@@ -35,7 +32,7 @@ interface DiscordChatMessage {
     message: string
     username: string
     timestamp: string
-    server: string
+    mc_server: string
     channel_id: string
     guild_id: string
     guild_name: string
@@ -46,8 +43,8 @@ interface MinecraftAdvancementMessage {
     advancement: string
     time: number,
     mc_server: string,
-    uuid: string
     id?: number | null
+    uuid: string
 }
 
 interface MinecraftPlayerJoinMessage {
@@ -78,31 +75,44 @@ interface MinecraftPlayerDeathMessage {
     //the object will be present only on pvp deaths and when recieving from websocket.
     //we do not use the object when sending a death to the api.
     //we send the murderer as a string, (username)
-    murderer?: { String: string, Valid: boolean }
+    murderer?: string
     time: number,
     type: "pve" | "pvp",
     mc_server: string,
     id?: number | null | undefined
     victimUUID: string,
-    murdererUUID?: { String: string, Valid: boolean }
+    murdererUUID?: string
 }
 
-type messageActionTypes = "error" | "new_user" | "key-accepted" | "new_name" | "id" | "minecraft_chat" | "discord_chat" | "send_update_player_list" | "minecraft_advancement" | "minecraft_player_join" | "minecraft_player_leave" | "minecraft_player_kill" | "minecraft_player_death";
-type inboundmessageDataTypes = DiscordChatMessage | MinecraftAdvancementMessage | MinecraftChatMessage | MinecraftPlayerDeathMessage | MinecraftPlayerKillMessage | MinecraftPlayerJoinMessage | MinecraftPlayerLeaveMessage | any;
+type messageActionTypes = "error" | "new_user" | "key-accepted" | "new_name" | "id" | "minecraft_chat" | "discord_chat"
+    | "inbound_minecraft_chat" | "inbound_discord_chat" | "send_update_player_list" | "minecraft_advancement"
+    | "minecraft_player_join" | "minecraft_player_leave" | "minecraft_player_kill" | "minecraft_player_death";
+type inboundmessageDataTypes = DiscordChatMessage | MinecraftAdvancementMessage | MinecraftChatMessage
+    | MinecraftPlayerDeathMessage | MinecraftPlayerKillMessage | MinecraftPlayerJoinMessage | MinecraftPlayerLeaveMessage | any;
 
 // type outboundMessageActionTypes = 
 // type outboundMessageDataTypes = any;
 
 interface InBoundWebsocketMessage {
-    client_id: string,
+    // client_id: string,
     action: messageActionTypes
     data: inboundmessageDataTypes
 }
 
 interface OutboundWebsocketMessage {
-    client_id: string,
     action: messageActionTypes,
     data: inboundmessageDataTypes
+}
+
+interface NewUserData { 
+    user: string, 
+    server: string 
+}
+
+interface NewUserNameData {
+    old_name: string,
+    new_name: string
+    server: string
 }
 
 interface Playtime {
@@ -170,18 +180,18 @@ interface Player {
 }
 
 interface AllPlayerStats {
-    Username: string | { String: string, Valid: boolean } | null,
-    Kills: number,
-    Deaths: number,
-    Joindate: string,
-    LastSeen: string | null | { String: string, Valid: boolean },
+    username: string | null,
+    kills: number,
+    deaths: number,
+    joindate: string,
+    lastseen: string | null,
     UUID: string,
-    Playtime: number,
-    Joins: number,
-    Leaves: number,
-    LastDeathTime: number,
-    LastDeathString: string | null,
-    MCServer: string
+    playtime: number,
+    joins: number,
+    leaves: number,
+    lastdeathTime: number,
+    lastdeathString: string | null,
+    mc_server: string
 }
 
 interface OnlineCheck {
@@ -190,7 +200,7 @@ interface OnlineCheck {
 }
 
 interface WhoIsData {
-    descriptions: string[]
+    description: string[]
 }
 
 interface ConvertToUUID {
@@ -200,7 +210,7 @@ interface ConvertToUUID {
 interface Quote {
     name: string,
     message: string,
-    Date: { String: string, Valid: boolean },
+    date: string,
     mc_server: string,
     uuid: string
 }
@@ -271,4 +281,6 @@ export {
     hourlyActivity,
     inboundmessageDataTypes,
     messageActionTypes,
+    NewUserData,
+    NewUserNameData
 }
