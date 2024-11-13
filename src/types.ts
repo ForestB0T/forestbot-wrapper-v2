@@ -243,7 +243,17 @@ interface PlayerActivityByWeekDayResponse {
     player_activity_by_week_day: PlayerActivityByWeekDay;
 }
 
+interface FaqData {
+    username: string,
+    uuid: string,
+    server: string,
+    id: number,
+    faq: string,
+    timestamp: string
+}
+
 export {
+    FaqData,
     Advancement,
     AllPlayerStats,
     ClientIdExchange,

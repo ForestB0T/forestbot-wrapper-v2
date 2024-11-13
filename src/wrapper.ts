@@ -1,7 +1,7 @@
 import axios from "axios";
 import ForestBotWebsocketClient from "./websocket.js";
 import EventEmitter from "events";
-import { AllPlayerStats, DiscordChatMessage, ForestBotAPIOptions, JoinCount, Joindate, Kd, LastSeen, MessageCount, MinecraftAdvancementMessage, MinecraftChatMessage, MinecraftPlayerDeathMessage, MinecraftPlayerJoinMessage, MinecraftPlayerKillMessage, MinecraftPlayerLeaveMessage, NameFind, NewUserData, NewUserNameData, OnlineCheck, PlayerActivityByHourResponse, PlayerActivityByWeekDayResponse, Playtime, Quote, WhoIsData, WordOccurence } from "./types.js";
+import { AllPlayerStats, DiscordChatMessage, FaqData, ForestBotAPIOptions, JoinCount, Joindate, Kd, LastSeen, MessageCount, MinecraftAdvancementMessage, MinecraftChatMessage, MinecraftPlayerDeathMessage, MinecraftPlayerJoinMessage, MinecraftPlayerKillMessage, MinecraftPlayerLeaveMessage, NameFind, NewUserData, NewUserNameData, OnlineCheck, PlayerActivityByHourResponse, PlayerActivityByWeekDayResponse, Playtime, Quote, WhoIsData, WordOccurence } from "./types.js";
 
 export declare interface ForestBotAPI extends EventEmitter {
     on(event: "websocket_error", listener: (error: Error) => void): this
@@ -492,6 +492,27 @@ class forestBotAPI extends EventEmitter {
         }
     }
 
+    public async getFaq(id?: string, server?: string): Promise<FaqData | null> {
+        try {
+
+            // getting a random faq since no ID or server was provided.
+            if (!id || !server) {
+                const response = await axios.get(`${this.apiurl}/faq`);
+                return response.data;
+            }
+       
+            const response = await axios.get(`${this.apiurl}/faq?id=${id}&server=${server}`);
+            return response.data;
+        } catch (err) {
+            if (this.logErrors) {
+                console.error(err);
+            }
+            return null;
+        }
+    }
+
+    
+
 
     /**
      * 
@@ -500,11 +521,48 @@ class forestBotAPI extends EventEmitter {
      * 
      */
 
+    /**
+     * Posting a new WhoIs Description for a user.
+     * @param username 
+     * @param description 
+     * @returns 
+     */
     public async postWhoIsDescription(username: string, description: string) {
         try {
             const response = await axios.post(`${this.apiurl}/whois-description`, {
                 username: username,
                 description: description
+            }, {
+                headers: {
+                    'x-api-key': this.apiKey
+                }
+            });
+
+            //should return id: number
+            return response.data;
+        } catch (err) {
+            if (this.logErrors) {
+                console.error(err);
+            }
+            return null;
+        }
+    }
+
+    /**
+     * Inserting a new Factoid into the database for a user.
+     * @param username 
+     * @param faq 
+     * @param uuid 
+     * @param server 
+     * @returns 
+     */
+    public async postNewFaq(username: string, faq: string, uuid: string, server: string): Promise<{ id: number } | null> {
+        try {
+            const response = await axios.post(`${this.apiurl}/post-faq`, {
+                username: username,
+                faq: faq,
+                uuid: uuid,
+                server: server
             }, {
                 headers: {
                     'x-api-key': this.apiKey
