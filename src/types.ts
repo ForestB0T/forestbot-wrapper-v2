@@ -249,7 +249,8 @@ interface FaqData {
     server: string,
     id: number,
     faq: string,
-    timestamp: string
+    timestamp: string,
+    total: number,
 }
 
 export {

@@ -1,6 +1,6 @@
 {
   "name": "forestbot-api-wrapper-v2",
-  "version": "1.4.6",
+  "version": "1.4.7",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "type": "module",
@@ -17,6 +17,7 @@
     "@types/node": "^20.11.5",
     "@types/ws": "^8.5.10",
     "axios": "^1.6.5",
+    "forestbot-api-wrapper-v2": "^1.4.7",
     "ws": "^8.16.0"
   }
 }
