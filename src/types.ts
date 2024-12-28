@@ -84,11 +84,13 @@ interface MinecraftPlayerDeathMessage {
     murdererUUID?: string
 }
 
+interface PlayerListUpdate { players: Player[] };
+
 type messageActionTypes = "error" | "new_user" | "key-accepted" | "new_name" | "id" | "minecraft_chat" | "discord_chat"
     | "inbound_minecraft_chat" | "inbound_discord_chat" | "send_update_player_list" | "minecraft_advancement"
     | "minecraft_player_join" | "minecraft_player_leave" | "minecraft_player_kill" | "minecraft_player_death";
 type inboundmessageDataTypes = DiscordChatMessage | MinecraftAdvancementMessage | MinecraftChatMessage
-    | MinecraftPlayerDeathMessage | MinecraftPlayerKillMessage | MinecraftPlayerJoinMessage | MinecraftPlayerLeaveMessage | any;
+    | MinecraftPlayerDeathMessage | MinecraftPlayerKillMessage | MinecraftPlayerJoinMessage | MinecraftPlayerLeaveMessage | NewUserNameData | NewUserData | PlayerListUpdate;
 
 // type outboundMessageActionTypes = 
 // type outboundMessageDataTypes = any;

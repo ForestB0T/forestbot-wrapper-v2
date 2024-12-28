@@ -320,7 +320,7 @@ class forestBotAPI extends EventEmitter {
      * @param server 
      * @returns 
      */
-    public async getTotalAdvancementsCount(uuid: string, server: string): Promise<number | null> {  
+    public async getTotalAdvancementsCount(uuid: string, server: string): Promise<number | null> {
         try {
             const response = await axios.get(`${this.apiurl}/advancements-count?uuid=${uuid}&server=${server}`);
             return response.data["total_advancements"];
@@ -500,7 +500,7 @@ class forestBotAPI extends EventEmitter {
                 const response = await axios.get(`${this.apiurl}/faq`);
                 return response.data;
             }
-       
+
             const response = await axios.get(`${this.apiurl}/faq?id=${id}&server=${server}`);
             return response.data;
         } catch (err) {
@@ -511,7 +511,7 @@ class forestBotAPI extends EventEmitter {
         }
     }
 
-    
+
 
 
     /**
@@ -556,7 +556,7 @@ class forestBotAPI extends EventEmitter {
      * @param server 
      * @returns 
      */
-    public async postNewFaq(username: string, faq: string, uuid: string, server: string): Promise<{ id: number } | null> {
+    public async postNewFaq(username: string, faq: string, uuid: string, server: string): Promise<{ id: number, error?: string } | null> {
         try {
             const response = await axios.post(`${this.apiurl}/post-faq`, {
                 username: username,
@@ -569,10 +569,15 @@ class forestBotAPI extends EventEmitter {
                 }
             });
             return response.data;
-        } catch (err) {
+        } catch (err: any) {
             if (this.logErrors) {
-                console.error(err);
+                console.error(err, " Error adding faq.");
             }
+
+            if (err?.response?.data?.error) {
+                return { id: -1, error: err.response.data.error }
+            }
+
             return null;
         }
     }

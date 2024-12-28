@@ -15,9 +15,6 @@ export default class ForestBotWebsocketClient {
     //The api key, can be a read write key or a read only key.
     private apiKey: string
 
-    //We get this from the websocket server when we connect then store it here.
-    //private givenClientId: string | undefined;
-
     //This is the interval that will be used to ping the websocket server every 5 seconds.
     private PingInterval: NodeJS.Timeout | undefined;
 
@@ -52,11 +49,7 @@ export default class ForestBotWebsocketClient {
         this.authenticate();
     };
 
-    //our websocket url will look something like:
-    //api-key - this being the api key
     private async authenticate() {
-
-
         /**
          * Client types can be
          * "minecraft" | "discord" | "other"
@@ -75,14 +68,9 @@ export default class ForestBotWebsocketClient {
      */
     public async sendMessage(data: { data: inboundmessageDataTypes, action: messageActionTypes }) {
 
-        // if (this.givenClientId == undefined) {
-        //     return this.ForestBotApi.emit("websocket_error", new Error("Client ID is not defined yet"))
-        // }
-
         const outBoundWebSocketMessage: OutboundWebsocketMessage = {
-            action: data.action as any,
+            action: data.action,
             data: data.data,
-
         }
         //After we create our data types we need to come back here and explicitly add types for our data. For now the data will be of type "any"
         const message = JSON.stringify(outBoundWebSocketMessage);
