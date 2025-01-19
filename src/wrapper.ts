@@ -422,9 +422,21 @@ class forestBotAPI extends EventEmitter {
         }
     }
 
-    public async getUsersSortedByJoindate(server: string, limit: number, order: "ASC" | "DESC"): Promise<AllPlayerStats[] | null> { 
+    public async getUsersSortedByJoindate(server: string, limit: number, order: "ASC" | "DESC", playerUsernames: string[]): Promise<AllPlayerStats[] | null> {
         try {
-            const response = await axios.get(`${this.apiurl}/users-sorted-by-joindate?server=${server}&limit=${limit}&order=${order}`);
+            // Encode playerUsernames as a comma-separated string
+            const usernamesParam = playerUsernames.join(",");
+            const response = await axios.get(
+                `${this.apiurl}/users-sorted-by-joindate`,
+                {
+                    params: {
+                        server,
+                        limit,
+                        order,
+                        usernames: usernamesParam, // Send as part of the query string
+                    },
+                }
+            );
             return response.data;
         } catch (err) {
             if (this.logErrors) {
