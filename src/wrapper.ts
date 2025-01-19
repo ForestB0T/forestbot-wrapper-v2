@@ -422,17 +422,10 @@ class forestBotAPI extends EventEmitter {
         }
     }
 
-
-    /**
-     * Get a random quote for a user on a specific server
-     * @param username 
-     * @param server 
-     * @returns 
-     */
-    public async getQuote(username: string, server: string): Promise<Quote | null> {
+    public async getUsersSortedByJoindate(server: string, limit: number, order: "ASC" | "DESC"): Promise<AllPlayerStats[] | null> { 
         try {
-            const response = await axios.get(`${this.apiurl}/quote?name=${username}&server=${server}`);
-            return response.data
+            const response = await axios.get(`${this.apiurl}/users-sorted-by-joindate?server=${server}&limit=${limit}&order=${order}`);
+            return response.data;
         } catch (err) {
             if (this.logErrors) {
                 console.error(err);
@@ -440,6 +433,42 @@ class forestBotAPI extends EventEmitter {
             return null;
         }
     }
+
+
+    /**
+     * Get a random quote for a user on a specific server
+     * @param username 
+     * @param server 
+     * @returns 
+     */
+    public async getQuote(
+        username: string,
+        server: string,
+        options?: { random?: boolean; phrase?: string }
+    ): Promise<Quote | null> {
+        try {
+            // Build query parameters dynamically
+            const params = new URLSearchParams({ server });
+            if (options?.random) {
+                params.append('random', 'true');
+                if (options.phrase) {
+                    params.append('phrase', options.phrase);
+                }
+            } else {
+                params.append('name', username);
+            }
+
+            // Send GET request with dynamic parameters
+            const response = await axios.get(`${this.apiurl}/quote?${params.toString()}`);
+            return response.data;
+        } catch (err) {
+            if (this.logErrors) {
+                console.error(err);
+            }
+            return null;
+        }
+    }
+
 
     /**
      * Get the top statistic for a server with a limit
