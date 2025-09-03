@@ -422,6 +422,9 @@ class forestBotAPI extends EventEmitter {
         }
     }
 
+    /**
+     * This is used to get the newest, or oldest users currently online, or out of a list of users.
+     */
     public async getUsersSortedByJoindate(server: string, limit: number, order: "ASC" | "DESC", playerUsernames: string[]): Promise<AllPlayerStats[] | null> {
         try {
             // Encode playerUsernames as a comma-separated string
@@ -445,6 +448,31 @@ class forestBotAPI extends EventEmitter {
             return null;
         }
     }
+
+    /**
+     * Get all unique users, with their join date for a specific server.
+     * @param server 
+     * @returns 
+     */
+    public async getUniqueUsers(server: string): Promise<{ username: string, joindate: string }[] | null> {
+        try {
+            const response = await axios.get(
+                `${this.apiurl}/unique-users`,
+                {
+                    params: {
+                        server,
+                    },
+                }
+            );
+            return response.data;
+        } catch (err) {
+            if (this.logErrors) {
+                console.error(err);
+            }
+            return null;
+        }
+    }
+
 
 
     /**
@@ -623,6 +651,34 @@ class forestBotAPI extends EventEmitter {
         }
     }
 
+    public async editFaq(id: number, username: string, faq: string, uuid: string, server: string): Promise<{ success: boolean, error?: string } | null> {
+        try {
+            const response = await axios.put(`${this.apiurl}/edit-faq`, {
+                username: username,
+                faq: faq,
+                uuid: uuid,
+                server: server,
+                id: id,
+            }, {
+                headers: {
+                    'x-api-key': this.apiKey
+                }
+            });
+            return response.data;
+        } catch (err: any) {
+            if (this.logErrors) {
+                console.error(err, " Error editing faq.");
+            }
+            if (err?.response?.data?.error) {
+                return { success: false, error: err.response.data.error }
+            }
+            return null;
+        }
+    }
+
+
 }
+
+
 
 export default forestBotAPI;

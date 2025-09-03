@@ -1,6 +1,6 @@
 {
   "name": "forestbot-api-wrapper-v2",
-  "version": "1.5.3",
+  "version": "1.5.6",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "type": "module",
