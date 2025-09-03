@@ -651,9 +651,17 @@ class forestBotAPI extends EventEmitter {
         }
     }
 
+            /**
+         * Edit an exisitng faq
+         * @param username 
+         * @param faq 
+         * @param uuid 
+         * @param server 
+         * @returns 
+         */
     public async editFaq(id: number, username: string, faq: string, uuid: string, server: string): Promise<{ success: boolean, error?: string } | null> {
         try {
-            const response = await axios.put(`${this.apiurl}/edit-faq`, {
+            const response = await axios.post(`${this.apiurl}/edit-faq`, {
                 username: username,
                 faq: faq,
                 uuid: uuid,
