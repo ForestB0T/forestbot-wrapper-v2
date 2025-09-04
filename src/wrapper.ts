@@ -282,9 +282,9 @@ class forestBotAPI extends EventEmitter {
      * @param server the minecraft server you want to get messages for
      * @param limit the limit of messages you want to get
      */
-    public async getMessages(username: string, server: string, limit: number, order: "DESC" | "ASC"): Promise<MinecraftChatMessage[] | null> {
+    public async getMessages(username: string, server: string, limit: number, order: "DESC" | "ASC", offset: number = 0): Promise<MinecraftChatMessage[] | null> {
         try {
-            const response = await axios.get(`${this.apiurl}/messages?name=${username}&server=${server}&limit=${limit}&order=${order}`);
+            const response = await axios.get(`${this.apiurl}/messages?name=${username}&server=${server}&limit=${limit}&order=${order}&offset=${offset}`);
             return response.data;
         } catch (err) {
             if (this.logErrors) {
